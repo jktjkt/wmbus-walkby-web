@@ -242,7 +242,8 @@ function onPacket(packet) {
 }
 
 document.getElementById('connect').addEventListener('click', async () => {
-    navigator.serial.requestPort({filters: [
+    const serial = window.serial_polyfill ?? navigator.serial;
+    serial.requestPort({filters: [
         { usbVendorId: 0x4b4, usbProductId: 0x0003}, // IMST iU891A-XL
     ]})
     .then((p) => {

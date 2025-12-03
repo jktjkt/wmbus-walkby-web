@@ -10,6 +10,7 @@
 
       <div class="toolbar">
         <button id="connect">Connect</button>
+        <button id="activate-polyfill" onclick="window.serial_polyfill = window.serial_polyfill_inactive; document.getElementById('activate-polyfill').disabled = true;">Activate WebUSB Polyfill</button>
       </div>
 
       <!-- https://github.com/colinbdclark/slip.js -->
@@ -22,6 +23,12 @@
 
       <script type="text/javascript" src="wmbus.js"></script>
 
+      <!-- https://cdn.jsdelivr.net/npm/web-serial-polyfill@1.0.15/dist/serial.min.js -->
+      <script type="module" src="serial.min.js"></script>
+      <script type="module">
+          import {serial} from './serial.min.js';
+          window.serial_polyfill_inactive = serial;
+      </script>
     </div>
   </body>
 </html>
