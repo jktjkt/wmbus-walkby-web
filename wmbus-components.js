@@ -124,8 +124,10 @@ class MetersWidget extends LitElement {
     }
 
     clearStorage() {
-        window.localStorage.removeItem("PACKETS");
-        this.reinitPackets();
+        if (window.confirm("Delete all captured packets? This cannot be undone.")) {
+            window.localStorage.removeItem("PACKETS");
+            this.reinitPackets();
+        }
     }
 }
 
