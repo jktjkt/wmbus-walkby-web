@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+  <head>
+    <title>WM-Bus meters</title>
+  </head>
+
+  <body>
+    <div id="background">
+      <h1>WM-Bus packet sniffing</h1>
+
+      <div class="toolbar">
+        <button id="connect">Connect</button>
+      </div>
+
+      <!-- https://github.com/colinbdclark/slip.js -->
+      <script type="text/javascript" src="slip.js"></script>
+      <!-- https://github.com/taichunmin/js-crc -->
+      <script type="text/javascript" src="crc.js"></script>
+
+      <script type="module" src="wmbus-components.js"></script>
+      <meters-table></meters-table>
+
+      <script type="text/javascript" src="wmbus.js"></script>
+
+    </div>
+  </body>
+</html>
+
