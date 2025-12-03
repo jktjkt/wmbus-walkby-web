@@ -24,6 +24,11 @@ class MetersWidget extends LitElement {
         div.meters-table { display: flex; flex-wrap: wrap; flex-direction: row; gap: 0.3em; }
         div.meter-reading { border: 1px solid black; padding: 4px; border-radius: 6px; text-align: left; }
         div.meter-reading.seen { background-color: #1e1; }
+        div.meter-reading.got-packet { animation: blinkPacket 0.3s 1; }
+        @keyframes blinkPacket {
+            from { background-color: #1e1; }
+            to { background-color: #08f; }
+        }
         div.meters-stats { border: 1px solid black; text-align: center; }
         div.meters-stats.missing { background-color: #e11; }
         div.meters-stats.done { background-color: #1e1; }
@@ -54,7 +59,7 @@ class MetersWidget extends LitElement {
         <div class="meters-stats ${missingMeters > 0 ? "missing" : "done"}">${missingMeters > 0 ? ("Still " + missingMeters + " to go") : "All meters seen"} <br/> ${this.error}</div>
         <div class=meters-table>
         ${this.rows.map(row => html`
-          <div class="meter-reading ${row.packets > 0 ? "seen" : "unseen"}">${row.name}</div>
+          <div class="meter-reading ${row.packets > 0 ? "seen" : "unseen"} ${row.fresh ? "got-packet" : ""}">${row.name}</div>
         `)}
         </div>
         </div>
@@ -64,14 +69,25 @@ class MetersWidget extends LitElement {
     addPacket(name, meterId, rssi, packet) {
         ++this.packetCount;
         this.PACKETS.push({time: new Date().toJSON(), rssi: rssi, name: name, meterId: meterId, packet: packet});
+        let idx = -1;
         for (let i = 0; i < this.rows.length; ++i) {
             if (this.rows[i].name == name) {
-                this.rows[i].packets++;
-                this.requestUpdate();
-                return;
+                idx = i;
+                break;
             }
         }
-        this.rows = [...this.rows, {name: name, packets: 1}];
+        if (idx >= 0) {
+            this.rows[idx].packets++;
+            this.rows[idx].fresh = true;
+            this.requestUpdate();
+        } else {
+            this.rows = [...this.rows, {name: name, packets: 1, fresh: true}];
+            idx = this.rows.length - 1;
+        }
+        setTimeout(() => {
+            this.rows[idx].fresh = false;
+            this.requestUpdate();
+        }, 1000);
     }
 
     addKnownMeter(name) {
