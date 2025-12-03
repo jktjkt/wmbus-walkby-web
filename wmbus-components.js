@@ -12,11 +12,16 @@ class MetersWidget extends LitElement {
     constructor() {
         super();
         this.rows = [];
-        this.packetCount = 0;
         this.isConnected = false;
         this.webUsbActive = false;
-        this.PACKETS = new Array();
-        this.error = null;
+        this.reinitPackets();
+        setInterval(() => {
+            if (this.storageDirty) {
+                window.localStorage.setItem("PACKETS", JSON.stringify(this.PACKETS));
+                this.storageDirty = false;
+            }
+        }, 5000);
+        ;
     }
 
     static styles = css`
@@ -53,6 +58,7 @@ class MetersWidget extends LitElement {
     
         return html`
         <div class=meters-container>
+        <button @click=${this.clearStorage} ?disabled=${this.packetCount == 0}>Clear persistent storage</button>
         <button id="connect" @click="${this.doConnectWmBus}" ?disabled=${this.isConnected}>Connect</button>
         <button id="activate-polyfill" @click="${this.toggleWebUsbPolyfill}" ?disabled=${this.isConnected}>${this.webUsbActive ? "Switch back to WebSerial" : "Activate WebUSB Polyfill"}</button>
         <button @click="${this.downloadPackets}"">Download ${this.packetCount} packets</button>
@@ -69,6 +75,7 @@ class MetersWidget extends LitElement {
     addPacket(name, meterId, rssi, packet) {
         ++this.packetCount;
         this.PACKETS.push({time: new Date().toJSON(), rssi: rssi, name: name, meterId: meterId, packet: packet});
+        this.storageDirty = true;
         let idx = -1;
         for (let i = 0; i < this.rows.length; ++i) {
             if (this.rows[i].name == name) {
@@ -107,6 +114,17 @@ class MetersWidget extends LitElement {
 
     doConnectWmBus() {
         this.real_connect_function();
+    }
+
+    reinitPackets() {
+        this.PACKETS = Array.from(JSON.parse(window.localStorage.getItem("PACKETS") ?? "[]"));
+        this.packetCount = this.PACKETS.length;
+        this.storageDirty = false;
+    }
+
+    clearStorage() {
+        window.localStorage.removeItem("PACKETS");
+        this.reinitPackets();
     }
 }
 
