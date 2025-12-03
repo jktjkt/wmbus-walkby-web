@@ -1,7 +1,7 @@
 var port = null;
 var decoder = null;
 var writer = null;
-var table = null;
+var METERS = null;
 const NAMES = new Map([
 ['KAM83076912', 'L482'],
 ['KAM83076919', 'L481'],
@@ -228,7 +228,7 @@ function onPacket(packet) {
             let sn = Array.from(payload.slice(4, 4+4).reverse()).map((c) => (c > 15 ? '' : '0') + c.toString(16)).join('');
             let meterId = mfgStr + sn;
             console.log(`${meterId} (${NAMES.get(meterId) ?? "unknown"}): ${rssi} dBm`);
-            table.addPacket(NAMES.get(meterId) ?? meterId, meterId, rssi, hexify(payload));
+            METERS.addPacket(NAMES.get(meterId) ?? meterId, meterId, rssi, hexify(payload));
         } else {
             console.log(`!!! short WM-Bus packet ${hexify(packet)}`);
         }
@@ -241,7 +241,7 @@ function onPacket(packet) {
     }
 }
 
-document.getElementById('connect').addEventListener('click', async () => {
+async function doConnect() {
     const serial = window.serial_polyfill ?? navigator.serial;
     serial.requestPort({filters: [
         { usbVendorId: 0x4b4, usbProductId: 0x0003}, // IMST iU891A-XL
@@ -250,7 +250,8 @@ document.getElementById('connect').addEventListener('click', async () => {
         port = p;
         port.open({baudRate: 115200})
         .then(async () => {
-            document.getElementById('connect').disabled = true;
+            METERS.isConnected = true;
+            METERS.error = null;
             decoder = new slip.Decoder({
                 onMessage: onPacket,
             });
@@ -288,14 +289,26 @@ document.getElementById('connect').addEventListener('click', async () => {
                     (pllTimeout >> 16) & 0xff,
                     (pllTimeout >> 24) & 0xff,
                 ]));
-            for await (const chunk of port.readable) {
-                decoder.decode(chunk);
+            try {
+                for await (const chunk of port.readable) {
+                    decoder.decode(chunk);
+                }
+            } catch (e) {
+                METERS.isConnected = false;
+                METERS.error = e;
             }
-        })
+        }).catch((e) => {
+            METERS.isConnected = false;
+            METERS.error = e;
+        });
+    }).catch((e) => {
+        METERS.isConnected = false;
+        METERS.error = e;
     });
-});
+}
 
-customElements.whenDefined('meters-table').then(() => {
-    table = document.querySelector('meters-table');
-    NAMES.forEach((pretty) => table.addKnownMeter(pretty));
+customElements.whenDefined('meters-widget').then(() => {
+    METERS = document.querySelector('meters-widget');
+    METERS.real_connect_function = doConnect;
+    NAMES.forEach((pretty) => METERS.addKnownMeter(pretty));
 });

@@ -1,50 +1,63 @@
 import { LitElement, html, css } from "./lit-all.min.js";
 
-class MetersTable extends LitElement {
+class MetersWidget extends LitElement {
     static properties = {
         rows: { type: Array },
         packetCount: { type: Number },
+        isConnected: { type: Boolean },
+        webUsbActive: { type: Boolean },
+        error: { type: String },
     };
 
     constructor() {
         super();
         this.rows = [];
         this.packetCount = 0;
+        this.isConnected = false;
+        this.webUsbActive = false;
         this.PACKETS = new Array();
+        this.error = null;
     }
 
     static styles = css`
-        table { border-collapse: collapse; width: 300px; }
-        th, td { border: 1px solid black; padding: 4px; text-align: left; }
-        th { background-color: #eee; }
-        tr.seen { background-color: #1e1; }
-        div.missing { border: 2px solid red; }
+        div.meters-container { display: flex; flex-direction: column; gap: 1em; width: 100%; }
+        div.meters-table { display: flex; flex-wrap: wrap; flex-direction: row; gap: 0.3em; }
+        div.meter-reading { border: 1px solid black; padding: 4px; border-radius: 6px; text-align: left; }
+        div.meter-reading.seen { background-color: #1e1; }
+        div.meters-stats { border: 1px solid black; text-align: center; }
+        div.meters-stats.missing { background-color: #e11; }
+        div.meters-stats.done { background-color: #1e1; }
+        div.meters-container > button { font-size: inherit !important; }
     `;
+
+    firstUpdated() {
+    }
+
+    toggleWebUsbPolyfill() {
+        if (this.webUsbActive) {
+            window.serial_polyfill = null;
+            this.webUsbActive = false;
+        } else {
+            window.serial_polyfill = window.serial_polyfill_inactive;
+            this.webUsbActive = true;
+        }
+    }
 
     render() {
         const missingMeters = this.rows.reduce((missing, row) => missing += row.packets == 0, 0);
-        const download = html`<button onclick="document.querySelector('meters-table').downloadPackets();">Download ${this.packetCount} packets</button>`;
-        const indicator = (missingMeters > 0 ? html`<div class=missing>Still ${missingMeters} meters to go</div>` : html``);
     
         return html`
-        ${download}
-        ${indicator}
-        <table>
-        <thead>
-        <tr>
-            <th>Meter</th>
-            <th># packets</th>
-        </tr>
-        </thead>
-        <tbody>
+        <div class=meters-container>
+        <button id="connect" @click="${this.doConnectWmBus}" ?disabled=${this.isConnected}>Connect</button>
+        <button id="activate-polyfill" @click="${this.toggleWebUsbPolyfill}">${this.webUsbActive ? "Switch back to WebSerial" : "Activate WebUSB Polyfill"}</button>
+        <button @click="${this.downloadPackets}"">Download ${this.packetCount} packets</button>
+        <div class="meters-stats ${missingMeters > 0 ? "missing" : "done"}">${missingMeters > 0 ? ("Still " + missingMeters + " to go") : "All meters seen"} <br/> ${this.error}</div>
+        <div class=meters-table>
         ${this.rows.map(row => html`
-          <tr class=${row.packets > 0 ? "seen" : "unseen"}>
-              <td>${row.name}</td>
-              <td>${row.packets}</td>
-          </tr>
+          <div class="meter-reading ${row.packets > 0 ? "seen" : "unseen"}">${row.name}</div>
         `)}
-        </tbody>
-        </table>
+        </div>
+        </div>
         `;
     }
 
@@ -75,7 +88,11 @@ class MetersTable extends LitElement {
         a.setAttribute('href', window.URL.createObjectURL(blob));
         a.click();
     }
+
+    doConnectWmBus() {
+        this.real_connect_function();
+    }
 }
 
-customElements.define('meters-table', MetersTable);
+customElements.define('meters-widget', MetersWidget);
 
