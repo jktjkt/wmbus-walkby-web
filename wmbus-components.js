@@ -35,7 +35,8 @@ class MetersWidget extends LitElement {
             to { background-color: #08f; }
         }
         div.meters-stats { border: 1px solid black; text-align: center; }
-        div.meters-stats.missing { background-color: #e11; }
+        div.meters-stats.error { background-color: #e11 !important; }
+        div.meters-stats.missing { background-color: #ee1; }
         div.meters-stats.done { background-color: #1e1; }
         div.meters-container > button { font-size: inherit !important; }
     `;
@@ -62,7 +63,7 @@ class MetersWidget extends LitElement {
         <button id="connect" @click="${this.doConnectWmBus}" ?disabled=${this.isConnected}>Connect</button>
         <button id="activate-polyfill" @click="${this.toggleWebUsbPolyfill}" ?disabled=${this.isConnected}>${this.webUsbActive ? "Switch back to WebSerial" : "Activate WebUSB Polyfill"}</button>
         <button @click="${this.downloadPackets}"">Download ${this.packetCount} packets</button>
-        <div class="meters-stats ${missingMeters > 0 ? "missing" : "done"}">${missingMeters > 0 ? ("Still " + missingMeters + " to go") : "All meters seen"} <br/> ${this.error}</div>
+        <div class="meters-stats ${missingMeters > 0 ? "missing" : "done"} ${this.error ? "error" : ""}">${missingMeters > 0 ? ("Still " + missingMeters + " to go") : "All meters seen"} <br/> ${this.error}</div>
         <div class=meters-table>
         ${this.rows.map(row => html`
           <div class="meter-reading ${row.packets > 0 ? "seen" : "unseen"} ${row.fresh ? "got-packet" : ""}">${row.name}</div>
