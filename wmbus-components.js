@@ -120,6 +120,9 @@ class MetersWidget extends LitElement {
     reinitPackets() {
         this.PACKETS = Array.from(JSON.parse(window.localStorage.getItem("PACKETS") ?? "[]"));
         this.packetCount = this.PACKETS.length;
+        for (let i = 0; i < this.rows.length; ++i) {
+            this.rows[i].packets = 0;
+        }
         this.storageDirty = false;
     }
 
