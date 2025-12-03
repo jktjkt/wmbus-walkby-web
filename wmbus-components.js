@@ -54,7 +54,7 @@ class MetersWidget extends LitElement {
         return html`
         <div class=meters-container>
         <button id="connect" @click="${this.doConnectWmBus}" ?disabled=${this.isConnected}>Connect</button>
-        <button id="activate-polyfill" @click="${this.toggleWebUsbPolyfill}">${this.webUsbActive ? "Switch back to WebSerial" : "Activate WebUSB Polyfill"}</button>
+        <button id="activate-polyfill" @click="${this.toggleWebUsbPolyfill}" ?disabled=${this.isConnected}>${this.webUsbActive ? "Switch back to WebSerial" : "Activate WebUSB Polyfill"}</button>
         <button @click="${this.downloadPackets}"">Download ${this.packetCount} packets</button>
         <div class="meters-stats ${missingMeters > 0 ? "missing" : "done"}">${missingMeters > 0 ? ("Still " + missingMeters + " to go") : "All meters seen"} <br/> ${this.error}</div>
         <div class=meters-table>
