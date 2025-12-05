@@ -152,6 +152,7 @@ const NAMES = new Map([
 ['KAM83077089', 'G112'],
 ['KAM83077088', 'G111'],
 ['KAM27316304', 'G-el1'],
+['KAM27316800', 'G-el2'],
 ]);
 
 const DEV_MGMT = 0x01;
