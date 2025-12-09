@@ -11,6 +11,7 @@ class MetersWidget extends LitElement {
 
     constructor() {
         super();
+        this.known = [];
         this.rows = [];
         this.isConnected = false;
         this.webUsbActive = false;
@@ -99,10 +100,12 @@ class MetersWidget extends LitElement {
     }
 
     addKnownMeter(name) {
-        if (this.rows.find((r) => r.name == name)) {
-            return;
+        if (!this.known.find((r) => r.name == name)) {
+            this.known = [...this.known, {name: name}];
         }
-        this.rows = [...this.rows, {name: name, packets: 0}];
+        if (!this.rows.find((r) => r.name == name)) {
+            this.rows = [...this.rows, {name: name, packets: 0}];
+        }
     }
 
     downloadPackets() {
@@ -120,10 +123,12 @@ class MetersWidget extends LitElement {
     reinitPackets() {
         this.PACKETS = Array.from(JSON.parse(window.localStorage.getItem("PACKETS") ?? "[]"));
         this.packetCount = this.PACKETS.length;
-        for (let i = 0; i < this.rows.length; ++i) {
-            this.rows[i].packets = 0;
+        this.rows = [];
+        for (let i = 0; i < this.known.length; ++i) {
+            this.rows = [...this.rows, {name: this.known[i].name, packets: 0, fresh: false}];
         }
         this.storageDirty = false;
+        this.requestUpdate();
     }
 
     clearStorage() {
