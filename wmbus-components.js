@@ -108,7 +108,7 @@ class MetersWidget extends LitElement {
     downloadPackets() {
         const blob = new Blob([JSON.stringify(this.PACKETS)], {type: 'text/json'});
         const a = document.createElement('a');
-        a.setAttribute('download', 'wmbus-packets.json');
+        a.setAttribute('download', `wmbus-${new Date().toJSON()}.json`);
         a.setAttribute('href', window.URL.createObjectURL(blob));
         a.click();
     }
