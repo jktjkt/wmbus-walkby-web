@@ -1,4 +1,4 @@
-import { LitElement, html, css } from "./lit-all.min.js";
+import { LitElement, html, css, nothing } from "./lit-all.min.js";
 
 class MetersWidget extends LitElement {
     static properties = {
@@ -67,7 +67,7 @@ class MetersWidget extends LitElement {
         <div class="meters-stats ${missingMeters > 0 ? "missing" : "done"} ${this.error ? "error" : ""}">${missingMeters > 0 ? ("Still " + missingMeters + " to go") : "All meters seen"} <br/> ${this.error}</div>
         <div class=meters-table>
         ${this.rows.map(row => html`
-          <div class="meter-reading ${row.packets > 0 ? "seen" : "unseen"} ${row.fresh ? "got-packet" : ""}">${row.name}</div>
+          <div class="meter-reading ${row.packets > 0 ? "seen" : "unseen"} ${row.fresh ? "got-packet" : ""}" title="${row.packets ? row.packets + " packets" : nothing}">${row.name}</div>
         `)}
         </div>
         </div>
