@@ -198,12 +198,12 @@ function extractPayload(packet, i) {
 }
 
 function onPacket(packet) {
-    // console.log(`<<< ${hexify(packet)}`);
+    console.log(`packet <<< ${hexify(packet)}`);
     const crc16x25 = window.taichunmin.crc.crc16x25;
     const crc = crc16x25(packet.slice(0, packet.length - 2));
     gotCrc = packet.at(packet.length - 2) + (packet.at(packet.length - 1) << 8);
     if (gotCrc != crc) {
-        console.log(`!!! CRC mismatch for ${hexify(packet)}`);
+        console.log(`!!! CRC mismatch: ${gotCrc} != ${crc} for ${hexify(packet)}`);
         return;
     }
     var i = 0;
@@ -243,6 +243,9 @@ function onPacket(packet) {
 
 async function doConnect() {
     const serial = window.serial_polyfill ?? navigator.serial;
+    decoder = new slip.Decoder({
+        onMessage: onPacket,
+    });
     serial.requestPort({filters: [
         { usbVendorId: 0x4b4, usbProductId: 0x0003}, // IMST iU891A-XL
     ]})
@@ -252,9 +255,6 @@ async function doConnect() {
         .then(async () => {
             METERS.isConnected = true;
             METERS.error = null;
-            decoder = new slip.Decoder({
-                onMessage: onPacket,
-            });
             writer = port.writable.getWriter();
             sendCommand(buildCommand(DEV_MGMT, MSG_PING, []));
 
@@ -307,8 +307,117 @@ async function doConnect() {
     });
 }
 
+async function doConnectBLE() {
+    decoder = new slip.Decoder({
+        onMessage: onPacket,
+    });
+    try {
+        METERS.port = new BleThing();
+        await METERS.port.open();
+        METERS.isConnected = true;
+        METERS.port.addEventListener('disconnect', (event) => {
+            METERS.isConnected = false;
+            METERS.port = null;
+            METERS.error = 'BLE disconnected';
+        });
+        METERS.port.rxCallback = (chunk) => {
+            decoder.decode(chunk);
+        };
+    } catch (error) {
+        METERS.isConnected = false;
+        METERS.error = error;
+    }
+}
+
+function isBluefy() {
+    return navigator.userAgent.includes('Bluefy');
+}
+
+class BleThing extends EventTarget {
+    serviceUUID = '479b3874-4778-4297-af5e-67532c966d77';
+    rxUUID = 'a7a90e21-6e1e-4984-a801-cdb2be26cb22';
+
+    _btDev = null;
+    _rx_characteristic = null;
+    rxCallback = null;
+
+    async open() {
+        console.log('Requesting device...');
+        const options = {
+            filters: [
+                {services: [
+                    this.serviceUUID,
+                ]},
+            ],
+        };
+
+        try {
+            this._btDev = await navigator.bluetooth.requestDevice(options);
+            this._btDev.addEventListener('gattserverdisconnected', () => { this._onDisconnected(); });
+            console.log('BLE: Connecting...');
+            let gatt = await this._btDev.gatt.connect();
+            console.log('BLE: Connected, requesting services...');
+            let service = await gatt.getPrimaryService(this.serviceUUID);
+            console.log('BLE: requesting RX characteristics...');
+            this._rx_characteristic = await service.getCharacteristic(this.rxUUID);
+            console.log('BLE: starting notifications...');
+            await this._rx_characteristic.startNotifications();
+            if (!isBluefy()) {
+                // BUG: without this start-stop-start cycle, the this._onRx() would be called against the *first*
+                // BleSerial instance indefinitely. Explicitly removing the event listener is not enough,
+                // and neigher is using an AbortController. Unless the *first* BleSerial calls stopNotifications(),
+                // that instance will keep receiving notifications about changes in that characteristic.
+                // It is not enough to call stopNotifications in BlePort.close(), because that one is not called when
+                // the BLE connection drops for some external reason. Also, one cannot call stopNotifications from
+                // an event handler that's connected to 'gattserverdisconnected' because the WebBluetooth actively rejects
+                // that when the BLE/GATT server is not connected. Yay.
+                await this._rx_characteristic.stopNotifications();
+                await this._rx_characteristic.startNotifications();
+            } else {
+                console.log('BLE: Bluefy detected, not doing the unreg/reg shenanigans');
+            }
+            console.log('BLE: RX characteristics: notifications started');
+            this._rx_characteristic.addEventListener('characteristicvaluechanged', (e) => { this._onRx(e); });
+            console.log('BLE: All good, connected to ' + this._btDev.name);
+        } catch (error) {
+            await this.close();
+            throw error;
+        }
+    }
+
+    async close() {
+        if (this._btDev && this._btDev.gatt.connected) {
+            console.log('BLE: disconnecting...')
+            await this._btDev.gatt.disconnect();
+            this._btDev = null;
+            console.log('BLE: disconnected')
+        } else {
+            console.log('BLE: Already disconnected');
+        }
+    }
+
+    _onRx(event) {
+        let v = event.target.value;
+        let chunk = [];
+        for (let i = v.byteOffset; i < v.byteLength; i++) {
+            chunk.push(v.getUint8(i));
+        }
+        console.log(`BLE: <<< ${hexify(chunk)}`);
+        if (this.rxCallback) {
+            this.rxCallback(chunk);
+        }
+    }
+
+    async _onDisconnected() {
+        this._rx_characteristic = null;
+        this._btDev = null;
+        this.dispatchEvent(new Event('disconnect'));
+    }
+};
+
 customElements.whenDefined('meters-widget').then(() => {
     METERS = document.querySelector('meters-widget');
-    METERS.real_connect_function = doConnect;
+    // METERS.real_connect_function = doConnect;
+    METERS.real_connect_function = doConnectBLE;
     NAMES.forEach((pretty) => METERS.addKnownMeter(pretty));
 });
