@@ -28,6 +28,7 @@ class MetersWidget extends LitElement {
     static styles = css`
         div.meters-container { display: flex; flex-direction: column; gap: 1em; width: 100%; }
         div.meters-table { display: flex; flex-wrap: wrap; flex-direction: row; gap: 0.3em; }
+        @media (max-width: 80rem) { div.meters-table { font-size: 60%; }}
         div.meter-reading { border: 1px solid black; padding: 4px; border-radius: 6px; text-align: left; }
         div.meter-reading.seen { background-color: #1e1; }
         div.meter-reading.got-packet { animation: blinkPacket 0.3s 1; }
