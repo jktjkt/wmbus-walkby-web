@@ -374,6 +374,7 @@ const NAMES = new Map([
 ['KAW27284246', 'X.W117'],
 ['KAW27284246', 'X.W118'],
 ['KAW27284247', 'X.W119'],
+// FIXME: KAW27284248 did not send during the evening of 2026-04-16, but it was sending regularly since 2026-04-14 13:13:23 CEST, it's very likely H26x/H27x/H28x
 ['KAW27284248', 'X.W120'],
 ['KAW27284249', 'X.W121'],
 ['KAW27284249', 'X.W122'],
@@ -413,6 +414,7 @@ const NAMES = new Map([
 ['KAW27284280', 'X.W156'],
 ['KAW27284281', 'X.W157'],
 ['KAW27284282', 'X.W158'],
+// FIXME: the KAW27284308 was seen exactly once
 ['KAW27284308', 'X.W159'],
 ['KAW27284314', 'X.W160'],
 ['KAW27284325', 'X.W162'],
@@ -466,6 +468,7 @@ const NAMES = new Map([
 ['KAW27284520', 'X.W213'],
 ['KAW27284521', 'X.W214'],
 ['KAW27284522', 'X.W215'],
+// FIXME: KAW27286334 was seen exactly once
 ['KAW27286334', 'X.W216'],
 ['KAW54585225', 'X.W217'],
 ['KAW54585225', 'X.W218'],
